@@ -12,6 +12,9 @@ import org.jxmapviewer.viewer.TileFactoryInfo;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -32,6 +35,9 @@ public class MapVisualizer {
 
         // Compute average speeds for each segment and time period
         avgSpeeds = computeAverageSpeeds(rawAvgSpeeds);
+
+        // Create the CSV file with average speeds per hour
+        createAvgSpeedsCSV("avg_speeds_per_hour.csv");
 
         // Create a JXMapViewer
         mapViewer = new JXMapViewer();
@@ -128,6 +134,17 @@ public class MapVisualizer {
         }
 
         return result;
+    }
+
+    private static void createAvgSpeedsCSV(String fileName) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+            writer.write("SegmentId,Time,AvgSpeed\n");
+            for (TimePeriodAvgSpeed avgSpeed : avgSpeeds) {
+                writer.write(String.format("%s,%s,%.2f\n", avgSpeed.getSegmentId(), avgSpeed.getTime(), avgSpeed.getAvgSpeed()));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private static List<Painter<JXMapViewer>> createPaintersForTimePeriod(LocalTime timePeriod) {
