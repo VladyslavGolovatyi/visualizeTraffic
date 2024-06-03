@@ -42,7 +42,10 @@ public class MapVisualizer {
         mapViewer.setTileFactory(tileFactory);
 
         // Enable interactions
-        mapViewer.addMouseListener(new PanMouseInputListener(mapViewer));
+        PanMouseInputListener panMouseInputListener = new PanMouseInputListener(mapViewer);
+        mapViewer.addMouseListener(panMouseInputListener);
+        mapViewer.addMouseMotionListener(panMouseInputListener); // Add this line to enable panning
+
         mapViewer.addMouseWheelListener(new ZoomMouseWheelListenerCenter(mapViewer));
 
         // Set the focus
