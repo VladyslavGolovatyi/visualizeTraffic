@@ -1,20 +1,25 @@
 package org.example;
 
 import org.jxmapviewer.JXMapViewer;
+import org.jxmapviewer.input.PanMouseInputListener;
+import org.jxmapviewer.input.ZoomMouseWheelListenerCenter;
 import org.jxmapviewer.painter.CompoundPainter;
 import org.jxmapviewer.painter.Painter;
-import org.jxmapviewer.viewer.*;
+import org.jxmapviewer.viewer.DefaultTileFactory;
+import org.jxmapviewer.viewer.GeoPosition;
+import org.jxmapviewer.viewer.TileFactory;
+import org.jxmapviewer.viewer.TileFactoryInfo;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.*;
 
 public class MapVisualizer {
     public static void main(String[] args) throws Exception {
         // Load data
         CSVLoader loader = new CSVLoader();
-        List<Segment> segments = loader.loadSegments("segments.csv");
+        List<Segment> segments = loader.loadSegments("segments_test.csv");
         List<AvgSpeed> avgSpeeds = loader.loadAvgSpeeds("avg_speeds.csv");
 
         // Create a JXMapViewer
@@ -36,32 +41,49 @@ public class MapVisualizer {
         TileFactory tileFactory = new DefaultTileFactory(info);
         mapViewer.setTileFactory(tileFactory);
 
+        // Enable interactions
+        mapViewer.addMouseListener(new PanMouseInputListener(mapViewer));
+        mapViewer.addMouseWheelListener(new ZoomMouseWheelListenerCenter(mapViewer));
+
         // Set the focus
         GeoPosition center = new GeoPosition(49.826, 24.038);
         mapViewer.setZoom(10);  // Set zoom level here (higher values zoom in more)
         mapViewer.setAddressLocation(center);
 
+        int i = 0;
         // Create painters for segments
         List<Painter<JXMapViewer>> painters = new ArrayList<>();
-        int i = 0;
         for (Segment segment : segments) {
             List<GeoPosition> positions = parseWKTToPositions(segment.getGeometry());
             if (positions != null && !positions.isEmpty()) {
                 Color segmentColor = getSegmentColor(segment.getId(), avgSpeeds);
-                RoutePainter routePainter = new RoutePainter(positions, segmentColor);
-                painters.add(routePainter);
+                if (segmentColor != null) { // Only add segments with avg speed
+                    RoutePainter routePainter = new RoutePainter(positions, segmentColor);
+                    painters.add(routePainter);
+                }
             }
-            System.out.println(++i + " segments processed");
+            System.out.println(i++);
         }
 
         // Combine painters
         CompoundPainter<JXMapViewer> compoundPainter = new CompoundPainter<>(painters);
         mapViewer.setOverlayPainter(compoundPainter);
 
+        // Add zoom controls
+        JPanel zoomPanel = new JPanel();
+        JButton zoomInButton = new JButton("+");
+        zoomInButton.addActionListener(e -> mapViewer.setZoom(mapViewer.getZoom() - 1));
+        JButton zoomOutButton = new JButton("-");
+        zoomOutButton.addActionListener(e -> mapViewer.setZoom(mapViewer.getZoom() + 1));
+        zoomPanel.add(zoomInButton);
+        zoomPanel.add(zoomOutButton);
+
         // Display the viewer in a JFrame
         JFrame frame = new JFrame("Map Viewer");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(mapViewer);
+        frame.setLayout(new BorderLayout());
+        frame.add(mapViewer, BorderLayout.CENTER);
+        frame.add(zoomPanel, BorderLayout.SOUTH);
         frame.setSize(800, 600);
         frame.setVisible(true);
     }
@@ -87,15 +109,15 @@ public class MapVisualizer {
         for (AvgSpeed avgSpeed : avgSpeeds) {
             if (avgSpeed.getSegmentId().equals(segmentId)) {
                 double speed = avgSpeed.getAvgSpeed();
-                if (speed < 5) {
+                if (speed < 3) {
                     return Color.RED;
-                } else if (speed < 10) {
-                    return Color.ORANGE;
+                } else if (speed < 6) {
+                    return Color.YELLOW;
                 } else {
                     return Color.GREEN;
                 }
             }
         }
-        return Color.BLACK;  // Default color if no avg speed is found
+        return null;  // Return null if no avg speed is found
     }
 }
