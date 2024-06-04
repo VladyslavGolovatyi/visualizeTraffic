@@ -24,13 +24,13 @@ public class CSVLoader {
         try (CSVReader csvReader = new CSVReaderBuilder(reader)
                 .withSkipLines(1)
                 .withCSVParser(parser)
-                .build();) {
+                .build()) {
             String[] line;
             while ((line = csvReader.readNext()) != null) {
                 // Parse each line into a Segment object
                 Segment segment = new Segment();
                 segment.setId(line[0]);
-                segment.setGeometry(line[13]);
+                segment.setGeometry(line[2]);
                 segments.add(segment);
             }
         }
@@ -50,12 +50,13 @@ public class CSVLoader {
         try (CSVReader csvReader = new CSVReaderBuilder(reader)
                 .withSkipLines(1)
                 .withCSVParser(parser)
-                .build();) {
+                .build()) {
             String[] line;
             while ((line = csvReader.readNext()) != null) {
                 String id = line[0];
+                String segmentId = line[0];
                 String geometry = line[13];
-                segments.add(new SegmentPart(id, id, geometry)); // id and segmentId are the same in this case
+                segments.add(new SegmentPart(id, segmentId, geometry, 0.0));
             }
         } catch (CsvValidationException e) {
             throw new RuntimeException(e);
@@ -91,7 +92,7 @@ public class CSVLoader {
     }
 
     public void writeSegmentParts(String filePath, List<SegmentPart> segmentParts) throws IOException {
-        try (CSVWriter writer = new CSVWriter(new FileWriter(filePath))) {
+        try (CSVWriter writer = new CSVWriter(new FileWriter(filePath), '|', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END)) {
             writer.writeNext(new String[]{"id", "segmentId", "geometry"});
             for (SegmentPart segmentPart : segmentParts) {
                 writer.writeNext(new String[]{segmentPart.getId(), segmentPart.getSegmentId(), segmentPart.getGeometry()});
@@ -134,6 +135,16 @@ class AvgSpeed {
     private String time;
     private double avgSpeed;
 
+
+    public AvgSpeed(String segmentId, String time, double avgSpeed) {
+        this.segmentId = segmentId;
+        this.time = time;
+        this.avgSpeed = avgSpeed;
+    }
+
+    public AvgSpeed() {
+    }
+
     // getters and setters
     public String getSegmentId() {
         return segmentId;
@@ -167,4 +178,3 @@ class AvgSpeed {
                 '}';
     }
 }
-

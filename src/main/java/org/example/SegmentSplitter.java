@@ -20,7 +20,7 @@ public class SegmentSplitter {
             segmentPositions.add(positions.get(i));
             segmentPositions.add(positions.get(i + 1));
             String newSegmentGeometry = convertPositionsToWKT(segmentPositions);
-            SegmentPart newSegment = new SegmentPart(generateSegmentId(), segment.getSegmentId(), newSegmentGeometry);
+            SegmentPart newSegment = new SegmentPart(generateSegmentId(), segment.getSegmentId(), newSegmentGeometry, segment.getLength());
             splitSegments.add(newSegment);
         }
         return splitSegments;
@@ -81,11 +81,13 @@ class SegmentPart {
     private String id;
     private String segmentId;
     private String geometry;
+    private double length;
 
-    public SegmentPart(String id, String segmentId, String geometry) {
+    public SegmentPart(String id, String segmentId, String geometry, double length) {
         this.id = id;
         this.segmentId = segmentId;
         this.geometry = geometry;
+        this.length = length;
     }
 
     public String getId() {
@@ -98,6 +100,10 @@ class SegmentPart {
 
     public String getGeometry() {
         return geometry;
+    }
+
+    public double getLength() {
+        return length;
     }
 
     @Override
