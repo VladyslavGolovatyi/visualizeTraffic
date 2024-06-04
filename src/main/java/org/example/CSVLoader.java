@@ -1,10 +1,10 @@
 package org.example;
 
-import com.opencsv.CSVParser;
-import com.opencsv.CSVParserBuilder;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVReaderBuilder;
+import com.opencsv.*;
+import com.opencsv.exceptions.CsvValidationException;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +37,32 @@ public class CSVLoader {
         return segments;
     }
 
+    public List<SegmentPart> loadSegmentsParts(String filePath) throws IOException {
+        List<SegmentPart> segments = new ArrayList<>();
+
+        CSVParser parser = new CSVParserBuilder()
+                .withSeparator('|')
+                .withIgnoreQuotations(true)
+                .build();
+
+        Reader reader = Files.newBufferedReader(Path.of(filePath));
+
+        try (CSVReader csvReader = new CSVReaderBuilder(reader)
+                .withSkipLines(1)
+                .withCSVParser(parser)
+                .build();) {
+            String[] line;
+            while ((line = csvReader.readNext()) != null) {
+                String id = line[0];
+                String geometry = line[13];
+                segments.add(new SegmentPart(id, id, geometry)); // id and segmentId are the same in this case
+            }
+        } catch (CsvValidationException e) {
+            throw new RuntimeException(e);
+        }
+        return segments;
+    }
+
     public List<AvgSpeed> loadAvgSpeeds(String filePath) throws Exception {
         List<AvgSpeed> avgSpeeds = new ArrayList<>();
 
@@ -62,6 +88,15 @@ public class CSVLoader {
             }
         }
         return avgSpeeds;
+    }
+
+    public void writeSegmentParts(String filePath, List<SegmentPart> segmentParts) throws IOException {
+        try (CSVWriter writer = new CSVWriter(new FileWriter(filePath))) {
+            writer.writeNext(new String[]{"id", "segmentId", "geometry"});
+            for (SegmentPart segmentPart : segmentParts) {
+                writer.writeNext(new String[]{segmentPart.getId(), segmentPart.getSegmentId(), segmentPart.getGeometry()});
+            }
+        }
     }
 }
 
